@@ -1,0 +1,79 @@
+%token integer<integer*> real<real*> id<identifier*> built_in_type<identifier*> float_precision<identifier*> l_pare r_pare l_bracket r_bracket l_brace r_brace l_broket r_broket equal add sub mul div exprod dot mod pow rational comma l_allow r_allow exclamation null eol;
+%namespace calc;
+
+TopLevelExpr<expr*>
+ : [make_top_level_expr] AdverseEffectExpr(0)
+ ;
+
+AdverseEffectExpr<expr*>
+ : [make_assign_expr] LRFnExpr(0)
+ | [make_assign] id(0) equal AdverseEffectExpr(1)
+ | [make_define_function] id(0) l_pare Arg(1) r_pare equal LRFnExpr(2)
+ | [make_command] id(0) id(1)
+ ;
+
+LRFnExpr<expr*>
+ : [make_lr_fn_expr] Expr(0)
+ | [make_lr_function] LRFnExpr(1) r_allow Expr(0)
+ ;
+
+Expr<expr*>
+ : [make_expr] Term(0)
+ | [make_add] Expr(0) add Term(1)
+ | [make_sub] Expr(0) sub Term(1)
+ | [make_mod] Expr(0) mod Term(1)
+ ;
+
+Arg<arg*>
+ : [make_arg] TopLevelExpr(0)
+ | [make_args] Arg(0) comma TopLevelExpr(1)
+ ;
+
+Term<term*>
+ : [make_term] UnaryOperationFactor(0)
+ | [make_mul] Term(0) mul UnaryOperationFactor(1)
+ | [make_exprod] Term(0) exprod UnaryOperationFactor(1)
+ | [make_div] Term(0) div UnaryOperationFactor(1)
+ | [make_dot] Term(0) dot UnaryOperationFactor(1)
+ ;
+
+UnaryOperationFactor<factor*>
+ : [make_unary_operation_factor] MiddleFactor(0)
+ | [make_negate] sub MiddleFactor(0)
+ ;
+
+MiddleFactor<factor*>
+ : [make_middle_factor] FactFactor(0)
+ | [make_pow] MiddleFactor(0) pow FactFactor(1)
+ | [make_pow_negate] MiddleFactor(0) pow sub FactFactor(1)
+ ;
+
+FactFactor<factor*>
+ : [make_fact_factor] RationalFactor(0)
+ | [make_fact] FactFactor(0) exclamation
+ ;
+
+RationalFactor<factor*>
+ : [make_rational_factor] Factor(0)
+ | [make_rational] RationalFactor(0) rational Factor(1)
+ | [make_rational_negate] RationalFactor(0) rational sub Factor(1)
+ ;
+
+Factor<factor*>
+ : [make_integer] integer(0)
+ | [make_real] real(0)
+ | [make_vector] l_bracket Arg(0) r_bracket
+ | [make_c_vector] l_broket Arg(0) r_broket
+ | [make_matrix] l_brace MatrixTerm(0) r_brace
+ | [make_identifier] id(0)
+ | [make_function] id(0) l_pare Arg(1) r_pare
+ | [make_cast] built_in_type(0) l_pare TopLevelExpr(1) r_pare
+ | [make_integer_cast] built_in_type(0) l_broket TopLevelExpr(1) r_broket
+ | [make_precision_cast] float_precision(0) l_pare TopLevelExpr(1) r_pare
+ | [make_factor_expr] l_pare TopLevelExpr(0) r_pare
+ ;
+
+MatrixTerm<matrix_terms*>
+ : [make_matrix_term] l_bracket Arg(0) r_bracket
+ | [make_matrix_terms] MatrixTerm(0) comma l_bracket Arg(1) r_bracket
+ ;
